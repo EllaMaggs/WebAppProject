@@ -1,0 +1,46 @@
+name: Deploy to Azure App Service
+
+on:
+  push:
+    branches:
+      - main  # Adjust this if you use a different branch for deployment
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout the repository code
+      - name: 'Checkout GitHub Actions'
+        uses: actions/checkout@v2
+
+      # Set up Terraform (optional, if you are redeploying infra)
+      - name: 'Set up Terraform'
+        uses: hashicorp/setup-terraform@v2
+        with:
+          terraform_version: 1.3.2
+
+      # Initialize Terraform (optional, if needed to manage infra)
+      - name: 'Terraform Init'
+        run: terraform init
+        working-directory: ./terraform
+
+      # Apply Terraform (optional)
+      - name: 'Terraform Apply'
+        run: terraform apply -auto-approve
+        working-directory: ./terraform
+
+      # Set up Python (required for Azure WebApp Action)
+      - name: 'Set up Python'
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.x'
+
+      # Deploy the application to Azure App Service
+      - name: 'Deploy to Azure Web App'
+        uses: azure/webapps-deploy@v2
+        with:
+          app-name: 'EllaMWebApp'  # Replace with your App Service name
+          slot-name: 'production'
+          publish-profile: ${{ secrets.AZURE_WEBAPP_PUBLISH_PROFILE }}
+          package: './app'  # Path to your app directory with the HTML files
